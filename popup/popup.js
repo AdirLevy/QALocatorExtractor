@@ -1,7 +1,10 @@
 document.getElementById("generate").addEventListener("click", async () => {
     const language = document.getElementById("language").value;
     const framework = document.getElementById("framework").value;
-    const priorityOrder = ["data-testid", "id", "name", "attribute", "tag", "class"];
+    const priorityOrder = [
+        "data-testid", "id", "name", "placeholder",
+        "aria-label", "for", "role", "text", "tag", "nth-child"
+    ];
 
     const loader = document.getElementById("loader");
     loader.style.display = "block";
