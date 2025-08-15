@@ -28,11 +28,17 @@ const allStrategies = {
     // },
     text: el => {
         const text = el.textContent?.trim();
-        if (!text || text.length < 3) return null;
+        if (!text || text.length < 2) return null;
 
         const tag = el.tagName.toLowerCase();
         const safeText = text.replace(/"/g, '\\"');
-        return `${tag}:contains("${safeText}")`; // or `cy.contains("${safeText}")`
+
+        // Prefer `cy.contains()` if element is a link or button
+        if (["a", "button", "h1", "h2", "h3", "h4", "h5", "h6"].includes(tag)) {
+            return `${tag}:contains("${safeText}")`;
+        }
+
+        return null;
     },
     tag: el => el.tagName.toLowerCase(),
     "nth-child": el => {
@@ -109,28 +115,6 @@ function getUniqueName(base) {
     return `${base}${++nameCounter[base]}`;
 }
 
-// function getBestUniqueSelector(el, priorityOrder) {
-//     for (const key of priorityOrder) {
-//         const strategy = allStrategies[key];
-//         if (!strategy) continue;
-
-//         const selector = strategy(el);
-//         if (selector && isUnique(selector)) return selector;
-//     }
-
-//     // Use text + nth-of-type as readable fallback
-//     if (el.textContent?.trim()) {
-//         const tag = el.tagName.toLowerCase();
-//         const siblings = Array.from(el.parentNode.querySelectorAll(tag));
-//         const index = siblings.indexOf(el) + 1;
-//         const fallbackSelector = `${tag}:nth-of-type(${index})`;
-
-//         if (isUnique(fallbackSelector)) return fallbackSelector;
-//     }
-
-//     return generateXPath(el); // Absolute last resort
-// }
-
 function getBestUniqueSelector(el, priorityOrder) {
     for (const key of priorityOrder) {
         const strategy = allStrategies[key];
@@ -180,21 +164,31 @@ function getVariableName(el) {
     else if (el.placeholder) baseName = el.placeholder.split(" ")[0];
     else if (el.getAttribute("aria-label")) baseName = el.getAttribute("aria-label").split(" ")[0];
     else if (el.textContent && el.textContent.trim().length > 0) {
-        // baseName = el.textContent.trim().split(/\s+/).slice(0, 3).join("");
-        baseName = toCamelCase(baseName);
+        // baseName = toCamelCase(baseName);
+        // baseName = toCamelCase(el.textContent.trim());
+        baseName = el.textContent.replace(/[-:,.\/]/g, " ").trim();
     } else {
         return null;
     }
 
-    // baseName = baseName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+    if (/^\d/.test(baseName)) {
+        let match  = baseName.match(/\.[a-z0-9]+$/i);
+        let extension = match ? match[0].slice(1) : "";  // remove the dot
+        let capitalizedExtension = extension.charAt(0).toUpperCase() + extension.slice(1).toLowerCase();
+        baseName = "random" + capitalizedExtension + "File";
+    }
+    // Remove file extensions
+    baseName = baseName.replace(/\.[a-z0-9]+$/i, "");
     baseName = toCamelCase(baseName);
 
     switch (el.tagName) {
         case "BUTTON": return baseName + "Button";
         case "INPUT":
             if (["text", "email", "password"].includes(el.type)) return baseName + "Field";
-            if (el.type === "checkbox") return baseName + "Checkbox";
-            if (el.type === "radio") return baseName + "Radio";
+            if (el.type === "checkbox" && !baseName.toLowerCase().includes("checkbox")) return baseName + "Checkbox";
+            if (el.type === "radio" && !baseName.toLowerCase().includes("radio")) return baseName + "Radio";
+            if (el.type === "submit" && !baseName.toLowerCase().includes("button")) return baseName + "Button";
+            if (baseName.toLowerCase().includes("button") || baseName.toLowerCase().includes("input") || baseName.toLowerCase().includes("field")) return baseName;
             return baseName + "Input";
         case "TEXTAREA": return baseName + "Textarea";
         case "SELECT": return baseName + "Dropdown";
@@ -214,7 +208,7 @@ function getVariableName(el) {
 function formatLocator(variableName, selector, language, framework) {
     const isContainsSelector = selector.includes(":contains(");
     const cleanText = selector.match(/:contains\("(.+?)"\)/)?.[1];
-    
+
     const frameworks = {
         // cypress: () => `cy.get("${selector}")`,
         cypress: () => isContainsSelector
