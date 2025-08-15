@@ -4,7 +4,7 @@ if (!window.hasLocatorListener) {
 
     chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
         if (message.action === "extractLocators") {
-            const locators = extractLocators(message.language, message.framework, message.priorityOrder);
+            const locators = extractLocators(message.language, message.framework, message.priorityOrder, message.outputType);
             sendResponse({ locators });
         }
         return true;
@@ -27,13 +27,20 @@ const allStrategies = {
     //     return text && text.length > 2 ? `${el.tagName.toLowerCase()}:contains("${text}")` : null;
     // },
     text: el => {
-        const text = el.textContent?.trim();
-        if (!text || text.length < 2) return null;
+        if (!el || !el.textContent) return null;
+        const text = el.textContent.trim();
+
+        // Skip if too long or multi-line
+        if (text.length > 50) return null;
+        if (text.split(/\r?\n/).length > 1) return null;
+
+        // Skip if it’s only numbers/symbols
+        if (!/[a-zA-Z]/.test(text)) return null;
 
         const tag = el.tagName.toLowerCase();
         const safeText = text.replace(/"/g, '\\"');
 
-        // Prefer `cy.contains()` if element is a link or button
+        // Prefer cy.contains() for clickable/heading elements
         if (["a", "button", "h1", "h2", "h3", "h4", "h5", "h6"].includes(tag)) {
             return `${tag}:contains("${safeText}")`;
         }
@@ -52,7 +59,7 @@ const allStrategies = {
 
 // ---------------------------------- Main Locator Funtion ----------------------------------
 
-function extractLocators(language, framework, priorityOrder) {
+function extractLocators(language, framework, priorityOrder, outputType) {
     Object.keys(nameCounter).forEach(key => delete nameCounter[key]);
     const elements = document.querySelectorAll("*");
     const locators = [];
@@ -67,15 +74,27 @@ function extractLocators(language, framework, priorityOrder) {
         if (!rawName) return;
 
         const variableName = getUniqueName(rawName);
-        const locatorCode = formatLocator(variableName, selector, language, framework);
+        const locatorCode = formatLocator(variableName, selector, language, framework, outputType);
 
         if (locatorCode) {
-            console.log(`[EXTRACTED] ${variableName} -> ${selector}`);
-            locators.push(locatorCode);
+            const priorityRank = getSelectorPriority(selector, priorityOrder);
+            locators.push({ code: locatorCode, rank: priorityRank });
         }
     });
 
-    return locators.length ? locators.join("\n") : "No valid locators found.";
+    // Sort by priority rank (lower number = better)
+    locators.sort((a, b) => a.rank - b.rank);
+
+    return locators.length ? locators.map(l => l.code).join("\n") : "No valid locators found.";
+}
+
+function getSelectorPriority(selector, priorityOrder) {
+    for (let i = 0; i < priorityOrder.length; i++) {
+        if (selector.includes(priorityOrder[i])) {
+            return i;
+        }
+    }
+    return priorityOrder.length;
 }
 
 // ---------------------------------- Sub-Main Funtions ----------------------------------
@@ -124,9 +143,9 @@ function getBestUniqueSelector(el, priorityOrder) {
         if (selector && isUnique(selector)) return selector;
     }
 
-    // ✅ Prefer `:contains("...")` if element has readable text
+    // ✅ Prefer `:contains("...")` if element has short, stable text
     const text = el.textContent?.trim();
-    if (text && text.length > 2) {
+    if (text && text.length > 2 && text.length <= 50 && !/\r?\n/.test(text) && /[a-zA-Z]/.test(text)) {
         const tag = el.tagName.toLowerCase();
         const containsSelector = `${tag}:contains("${text.replace(/"/g, '\\"')}")`;
 
@@ -164,15 +183,20 @@ function getVariableName(el) {
     else if (el.placeholder) baseName = el.placeholder.split(" ")[0];
     else if (el.getAttribute("aria-label")) baseName = el.getAttribute("aria-label").split(" ")[0];
     else if (el.textContent && el.textContent.trim().length > 0) {
-        // baseName = toCamelCase(baseName);
-        // baseName = toCamelCase(el.textContent.trim());
-        baseName = el.textContent.replace(/[-:,.\/]/g, " ").trim();
+        let text = el.textContent.replace(/[-:,.\/]/g, " ").trim();
+        // Limit to first 4 words max
+        let words = text.split(/\s+/).slice(0, 4).join(" ");
+        // Limit total length to avoid absurdly long variable names
+        if (words.length > 30) {
+            words = words.substring(0, 30);
+        }
+        baseName = words;
     } else {
         return null;
     }
 
     if (/^\d/.test(baseName)) {
-        let match  = baseName.match(/\.[a-z0-9]+$/i);
+        let match = baseName.match(/\.[a-z0-9]+$/i);
         let extension = match ? match[0].slice(1) : "";  // remove the dot
         let capitalizedExtension = extension.charAt(0).toUpperCase() + extension.slice(1).toLowerCase();
         baseName = "random" + capitalizedExtension + "File";
@@ -205,12 +229,11 @@ function getVariableName(el) {
     }
 }
 
-function formatLocator(variableName, selector, language, framework) {
+function formatLocator(variableName, selector, language, framework, outputType) {
     const isContainsSelector = selector.includes(":contains(");
     const cleanText = selector.match(/:contains\("(.+?)"\)/)?.[1];
 
     const frameworks = {
-        // cypress: () => `cy.get("${selector}")`,
         cypress: () => isContainsSelector
             ? `cy.contains("${cleanText}")`
             : `cy.get("${selector}")`,
@@ -226,6 +249,9 @@ function formatLocator(variableName, selector, language, framework) {
         cpp: () => `WebElement ${variableName} = driver->FindElement(By::cssSelector("${selector}"));`
     };
 
+    if (outputType === "string") {
+        return `${variableName} = "${selector}"`;
+    }
     return languages[language]?.();
 }
 

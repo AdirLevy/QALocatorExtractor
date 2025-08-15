@@ -1,7 +1,17 @@
-body {
-  width: 100%;
-  max-width: 600px;
+
+html { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+
+/* Set the popup width once; padding stays inside because of border-box */
+html, body {
+  width: 600px;           /* controls the popup's actual width */
   margin: 0;
+}
+
+body {
+  /* width: 100%;
+  max-width: 620px; /* slight increase */
+  /* margin: 0; */
   font-family: "Segoe UI", Roboto, sans-serif;
   background-color: #f4f4f9;
   padding: 20px;
@@ -12,9 +22,35 @@ body {
   flex-direction: column;
   gap: 16px;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 24px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+select, button, textarea {
+  font-size: 1rem;
+  padding: 10px;
+  padding-right: 28px; /* more room so arrows aren't tight */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button {
+  background-color: #3b82f6;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #2563eb;
 }
 
 h2 {
@@ -23,29 +59,14 @@ h2 {
   color: #222;
 }
 
-select, button, textarea {
-  font-size: 1rem;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  width: 100%;
-  box-sizing: border-box;
-}
 
 textarea {
   height: 250px;
   resize: vertical;
   font-family: monospace;
-}
-
-button {
-  background-color: #4CAF50;
-  color: #fff;
-  transition: background-color 0.2s ease-in-out;
-}
-
-button:hover {
-  background-color: #45a049;
+  line-height: 1.4;
+  padding: 10px;
+  padding-right: 52px; /* space before scrollbar */
 }
 
 #loader {
@@ -53,4 +74,21 @@ button:hover {
   text-align: center;
   font-style: italic;
   color: #555;
+}
+
+pre {
+  background: #1e1e1e;
+  color: #f8f8f2;
+  padding: 12px 24px 12px 12px;  /* extra right cushion */
+  border: 1px solid #ccc;
+  max-height: 250px;
+  overflow: auto;                /* vertical + horizontal as needed */
+  scrollbar-gutter: stable both-edges;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+pre code {
+  font-family: 'Fira Code', monospace;
 }
