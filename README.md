@@ -22,7 +22,7 @@ Features:
 
 Installation
 
-1. Clone or download this repository: git clone https://github.com/yourusername/locator-extractor.git
+1. Clone or download this repository: git clone https://github.com/AdirLevy/QALocatorExtractor
 2. Open Google Chrome and go to: chrome://extensions
 3. Enable Developer Mode (top right).
 4. Click Load unpacked and select the extension folder.
