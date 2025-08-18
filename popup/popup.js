@@ -16,18 +16,26 @@ document.getElementById("generate").addEventListener("click", async () => {
         });
         chrome.tabs.sendMessage(
             tab.id,
-            { action: "extractLocators", language, framework, outputType, priorityOrder },
+            { action: "extractLocators", language, framework, outputType, priorityOrder, safeOnly: document.getElementById("safeOnly").checked },
             (response) => {
                 loader.style.display = "none";
 
-                if (chrome.runtime.lastError) {
-                    document.querySelector("#output code").innerText = "❌ Error: Could not connect to the tab.";
-                    Prism.highlightAll();
-                    return;
-                }
+                const codeEl = document.querySelector("#output code");
+                const langMap = { js: "javascript", python: "python", java: "java", csharp: "csharp", cpp: "clike" };
+                codeEl.className = `language-${langMap[language] || "javascript"}`;
 
-                document.querySelector("#output code").innerText = response?.locators || "No locators found.";
-                Prism.highlightAll(); // highlight after inserting text
+                let text = (response && response.locators) ? response.locators : "No locators found.";
+
+                // Normalize line breaks just in case
+                text = String(text).replace(/\r\n/g, "\n");
+
+                // Use textContent so Prism gets literal \n
+                codeEl.textContent = text.endsWith("\n") ? text : text + "\n";
+
+                // Highlight exactly this block (safer in popups)
+                if (window.Prism && typeof Prism.highlightElement === "function") {
+                    Prism.highlightElement(codeEl);
+                }
             }
         );
     } catch (err) {
@@ -40,7 +48,7 @@ document.getElementById("generate").addEventListener("click", async () => {
 
 // Fix: Correcting the event listener for the copy button to match the ID in the HTML
 document.getElementById("copy").addEventListener("click", () => {
-    const resultText = document.querySelector("#output code").innerText;
+    const resultText = document.querySelector("#output code").textContent;
     if (resultText) {
         copyToClipboard(resultText);
         alert("Copied to clipboard!");

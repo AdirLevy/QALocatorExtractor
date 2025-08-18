@@ -1,10 +1,18 @@
+html {
+  box-sizing: border-box;
+}
 
-html { box-sizing: border-box; }
-*, *::before, *::after { box-sizing: inherit; }
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
 
 /* Set the popup width once; padding stays inside because of border-box */
-html, body {
-  width: 600px;           /* controls the popup's actual width */
+html,
+body {
+  width: 600px;
+  /* controls the popup's actual width */
   margin: 0;
 }
 
@@ -32,10 +40,13 @@ label {
   margin-bottom: 4px;
 }
 
-select, button, textarea {
+select,
+button,
+textarea {
   font-size: 1rem;
   padding: 10px;
-  padding-right: 28px; /* more room so arrows aren't tight */
+  padding-right: 28px;
+  /* more room so arrows aren't tight */
   border: 1px solid #ccc;
   border-radius: 6px;
   width: 100%;
@@ -66,7 +77,8 @@ textarea {
   font-family: monospace;
   line-height: 1.4;
   padding: 10px;
-  padding-right: 52px; /* space before scrollbar */
+  padding-right: 52px;
+  /* space before scrollbar */
 }
 
 #loader {
@@ -76,19 +88,36 @@ textarea {
   color: #555;
 }
 
-pre {
-  background: #1e1e1e;
-  color: #f8f8f2;
-  padding: 12px 24px 12px 12px;  /* extra right cushion */
-  border: 1px solid #ccc;
-  max-height: 250px;
-  overflow: auto;                /* vertical + horizontal as needed */
-  scrollbar-gutter: stable both-edges;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: 0.9rem;
-}
+
 
 pre code {
+  font-family: 'Fira Code', monospace;
+}
+
+
+.code-output pre {
+  /* visuals */
+  background: #1e1e1e;
+  color: #f8f8f2;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 12px 24px 12px 12px;
+  font-size: 0.9rem;
+
+  /* behavior */
+  max-height: 300px;
+  overflow: auto;
+  scrollbar-gutter: stable both-edges;
+
+  /* the key: preserve line breaks from textContent even after Prism wraps spans */
+  white-space: pre-wrap !important;
+  word-break: break-word;
+}
+
+.code-output code {
+  font-family: 'Fira Code', monospace !important;
+}
+
+#output code {
   font-family: 'Fira Code', monospace;
 }

@@ -6,9 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QA Automation Locator Generator</title>
   <link rel="stylesheet" href="popup.css" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <link href="prism.min.css" rel="stylesheet" />
+  <script src="prism.min.js"></script>
+  <script src="prism-javascript.min.js"></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script> -->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script> -->
 </head>
 
 <body style="width: 600px; margin: 0;">
@@ -40,6 +42,11 @@
       <option value="string">Variable + Selector String</option>
     </select>
 
+    <label>
+      <input type="checkbox" id="safeOnly" checked>
+      Only output safe selectors (skip XPath / deep nth-child)
+    </label>
+
     <!-- Generate Button -->
     <button id="generate" aria-label="Generate locators">Generate Locators</button>
 
@@ -48,7 +55,9 @@
 
     <!-- Output Textarea -->
     <label for="output">Generated Locators:</label>
-    <pre id="output" class="language-javascript"><code></code></pre>
+    <div id="output" class="code-output">
+      <pre><code class="language-javascript"></code></pre>
+    </div>
 
     <!-- Copy Button -->
     <button id="copy" aria-label="Copy locators to clipboard">Copy Locators</button>
